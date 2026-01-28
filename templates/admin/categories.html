@@ -1,0 +1,189 @@
+{% extends "admin/dashboard.html" %}
+
+{% block title %}Категории - MemePlatform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-lg-2">
+        <div class="sidebar">
+            <h6 class="text-muted mb-3">АДМИН-ПАНЕЛЬ</h6>
+            <nav class="admin-nav">
+                <a class="nav-link" href="/admin">
+                    <i class="bi bi-speedometer2"></i> Дашборд
+                </a>
+                <a class="nav-link" href="/admin/moderation">
+                    <i class="bi bi-hourglass-split"></i> Модерация
+                </a>
+                <a class="nav-link" href="/admin/memes">
+                    <i class="bi bi-collection"></i> Все мемы
+                </a>
+                <a class="nav-link active" href="/admin/categories">
+                    <i class="bi bi-folder"></i> Категории
+                </a>
+                <a class="nav-link" href="/admin/users">
+                    <i class="bi bi-people"></i> Пользователи
+                </a>
+                <a class="nav-link" href="/admin/reports">
+                    <i class="bi bi-flag"></i> Жалобы
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-folder text-primary"></i> Категории</h2>
+            
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                <i class="bi bi-plus-lg"></i> Добавить категорию
+            </button>
+        </div>
+        
+        {% if success %}
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle"></i> {{ success }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Иконка</th>
+                                <th>Название</th>
+                                <th>Описание</th>
+                                <th>Мемов</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cat in categories %}
+                            <tr>
+                                <td>{{ cat.id }}</td>
+                                <td style="font-size: 1.5rem;">{{ cat.icon or '📁' }}</td>
+                                <td>{{ cat.name }}</td>
+                                <td>{{ cat.description or '-' }}</td>
+                                <td><span class="badge bg-primary">{{ cat.meme_count or 0 }}</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary btn-edit-cat" 
+                                                data-id="{{ cat.id }}" 
+                                                data-name="{{ cat.name }}" 
+                                                data-icon="{{ cat.icon or '' }}" 
+                                                data-desc="{{ cat.description or '' }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        {% if cat.meme_count == 0 %}
+                                        <button class="btn btn-outline-danger btn-delete-cat" data-id="{{ cat.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Новая категория</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/admin/categories">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Иконка (эмодзи)</label>
+                        <input type="text" name="icon" class="form-control" placeholder="😀" maxlength="10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Название *</label>
+                        <input type="text" name="name" class="form-control" required maxlength="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" class="form-control" rows="2" maxlength="200"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i> Добавить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Редактировать категорию</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/admin/categories" id="editForm">
+                <input type="hidden" name="id" id="editId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Иконка (эмодзи)</label>
+                        <input type="text" name="icon" id="editIcon" class="form-control" maxlength="10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Название *</label>
+                        <input type="text" name="name" id="editName" class="form-control" required maxlength="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" id="editDescription" class="form-control" rows="2" maxlength="200"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.btn-edit-cat').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('editId').value = this.dataset.id;
+            document.getElementById('editName').value = this.dataset.name;
+            document.getElementById('editIcon').value = this.dataset.icon;
+            document.getElementById('editDescription').value = this.dataset.desc;
+            new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+        });
+    });
+    
+    document.querySelectorAll('.btn-delete-cat').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (!confirm('Удалить категорию?')) return;
+            const res = await fetch(`/api/admin/category/${this.dataset.id}`, {method: 'DELETE'});
+            if (res.ok) location.reload();
+        });
+    });
+</script>
+{% endblock %}

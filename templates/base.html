@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MemePlatform{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --dark-bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #eee;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #0f0f1a 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: rgba(22, 33, 62, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(108, 92, 231, 0.3);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+            font-size: 1.5rem;
+        }
+        
+        .nav-link {
+            color: var(--text-color) !important;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary-color);
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(108, 92, 231, 0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3);
+        }
+        
+        .meme-card img, .meme-card video {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .meme-card .card-body {
+            padding: 1rem;
+        }
+        
+        .meme-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #999;
+        }
+        
+        .meme-stats i {
+            margin-right: 0.25rem;
+        }
+        
+        .category-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .sidebar {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            position: sticky;
+            top: 80px;
+        }
+        
+        .sidebar h5 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .category-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .category-list li a {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        
+        .category-list li a:hover,
+        .category-list li a.active {
+            background: rgba(108, 92, 231, 0.2);
+        }
+        
+        .category-list li a span.icon {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .category-list li a {
+            justify-content: space-between;
+        }
+        
+        .category-list li a .badge {
+            flex-shrink: 0;
+            min-width: 28px;
+            text-align: center;
+        }
+        
+        .category-list .cat-name {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .stats-box {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-box h3 {
+            font-size: 2rem;
+            margin: 0;
+        }
+        
+        .stats-box p {
+            margin: 0;
+            opacity: 0.8;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            color: white;
+            border-radius: 25px;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+        }
+        
+        .search-box input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25);
+            color: white;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            color: white;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .form-select option {
+            background: var(--dark-bg);
+        }
+        
+        .alert {
+            border-radius: 10px;
+        }
+        
+        .like-btn {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .like-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        .like-btn.liked {
+            color: #e74c3c;
+        }
+        
+        footer {
+            background: var(--card-bg);
+            padding: 2rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(108, 92, 231, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: static;
+                margin-bottom: 1.5rem;
+            }
+            
+            .meme-card img, .meme-card video {
+                height: 150px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-emoji-laughing"></i> MemePlatform
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <form class="d-flex mx-auto search-box" action="/" method="get" style="max-width: 400px; width: 100%;">
+                    <i class="bi bi-search"></i>
+                    <input type="search" name="search" class="form-control" placeholder="Поиск мемов..." 
+                           value="{{ search_query or '' }}">
+                </form>
+                
+                <ul class="navbar-nav ms-auto">
+                    {% if user %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/upload">
+                                <i class="bi bi-cloud-upload"></i> Загрузить
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/my-memes">
+                                <i class="bi bi-collection"></i> Мои мемы
+                            </a>
+                        </li>
+                        {% if user.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link text-warning" href="/admin">
+                                <i class="bi bi-shield-check"></i> Админ
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> {{ user.display_name or user.username or 'User' }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                                <li><a class="dropdown-item" href="/profile">
+                                    <i class="bi bi-person"></i> Профиль
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/logout">
+                                    <i class="bi bi-box-arrow-right"></i> Выйти
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login">
+                                <i class="bi bi-shield-lock"></i> Вход для админов
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-0">© 2026 MemePlatform. Создавай и делись мемами!</p>
+            <p class="text-muted small">
+                <a href="/api/memes" class="text-muted">API</a> · 
+                <a href="#" class="text-muted">Правила</a> · 
+                <a href="#" class="text-muted">Контакты</a>
+            </p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Like functionality
+        async function toggleLike(memeId, btn) {
+            try {
+                const response = await fetch(`/api/meme/${memeId}/like`, {method: 'POST'});
+                const data = await response.json();
+                
+                btn.classList.toggle('liked', data.liked);
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = data.liked ? 'bi bi-heart-fill' : 'bi bi-heart';
+                }
+                const countEl = btn.querySelector('.like-count');
+                if (countEl) countEl.textContent = data.likes_count;
+            } catch (e) {
+                alert('Войдите, чтобы ставить лайки');
+            }
+        }
+        
+        // Share functionality
+        async function shareMeme(memeId) {
+            try {
+                const response = await fetch(`/api/meme/${memeId}/share`, {method: 'POST'});
+                const data = await response.json();
+                
+                const url = window.location.origin + data.share_url;
+                await navigator.clipboard.writeText(url);
+                alert('Ссылка скопирована!');
+            } catch (e) {
+                alert('Войдите, чтобы делиться мемами');
+            }
+        }
+        
+        // Bind events to data-attribute buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            // Like buttons
+            document.querySelectorAll('.like-btn[data-id]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    toggleLike(this.dataset.id, this);
+                });
+            });
+            
+            // Share buttons
+            document.querySelectorAll('.btn-share[data-id]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    shareMeme(this.dataset.id);
+                });
+            });
+            
+            // Delete buttons in user pages
+            document.querySelectorAll('.btn-delete[data-id]').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if (!confirm('Вы уверены, что хотите удалить этот мем?')) return;
+                    try {
+                        const res = await fetch(`/api/admin/meme/${this.dataset.id}`, {method: 'DELETE'});
+                        if (res.ok) location.reload();
+                        else alert('Ошибка удаления');
+                    } catch (e) {
+                        alert('Ошибка: ' + e.message);
+                    }
+                });
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

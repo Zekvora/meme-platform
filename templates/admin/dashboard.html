@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Админ-панель - MemePlatform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-stat {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 15px;
+        padding: 1.5rem;
+        color: white;
+    }
+    
+    .admin-stat.pending {
+        background: linear-gradient(135deg, #f39c12, #e74c3c);
+    }
+    
+    .admin-stat.success {
+        background: linear-gradient(135deg, #27ae60, #2ecc71);
+    }
+    
+    .admin-stat.info {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+    
+    .admin-stat h3 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .admin-stat p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    
+    .admin-nav .nav-link {
+        color: var(--text-color);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .admin-nav .nav-link:hover,
+    .admin-nav .nav-link.active {
+        background: rgba(108, 92, 231, 0.2);
+        color: var(--primary-color);
+    }
+    
+    .admin-nav .nav-link i {
+        width: 24px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-lg-2">
+        <div class="sidebar">
+            <h6 class="text-muted mb-3">АДМИН-ПАНЕЛЬ</h6>
+            <nav class="admin-nav">
+                <a class="nav-link active" href="/admin">
+                    <i class="bi bi-speedometer2"></i> Дашборд
+                </a>
+                <a class="nav-link" href="/admin/moderation">
+                    <i class="bi bi-hourglass-split"></i> Модерация
+                    {% if stats.pending_memes %}
+                    <span class="badge bg-danger float-end">{{ stats.pending_memes }}</span>
+                    {% endif %}
+                </a>
+                <a class="nav-link" href="/admin/memes">
+                    <i class="bi bi-collection"></i> Все мемы
+                </a>
+                <a class="nav-link" href="/admin/categories">
+                    <i class="bi bi-folder"></i> Категории
+                </a>
+                <a class="nav-link" href="/admin/users">
+                    <i class="bi bi-people"></i> Пользователи
+                </a>
+                <a class="nav-link" href="/admin/reports">
+                    <i class="bi bi-flag"></i> Жалобы
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-lg-10">
+        <h2 class="mb-4"><i class="bi bi-speedometer2 text-primary"></i> Дашборд</h2>
+        
+        <!-- Stats -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="admin-stat pending">
+                    <h3>{{ stats.pending_memes or 0 }}</h3>
+                    <p><i class="bi bi-hourglass-split"></i> На модерации</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat success">
+                    <h3>{{ stats.total_memes or 0 }}</h3>
+                    <p><i class="bi bi-collection"></i> Всего мемов</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat info">
+                    <h3>{{ stats.total_users or 0 }}</h3>
+                    <p><i class="bi bi-people"></i> Пользователей</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat">
+                    <h3>{{ stats.today_uploads or 0 }}</h3>
+                    <p><i class="bi bi-calendar-day"></i> Сегодня загружено</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Recent Activity -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Последние загрузки</h5>
+                        <a href="/admin/memes" class="btn btn-sm btn-outline-primary">Все</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Мем</th>
+                                        <th>Автор</th>
+                                        <th>Статус</th>
+                                        <th>Дата</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for meme in pending_memes %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="/data/uploads/{{ meme.filename }}" 
+                                                     style="width: 50px; height: 40px; object-fit: cover; border-radius: 4px;"
+                                                     class="me-2">
+                                                {{ meme.title[:20] + '...' if meme.title and meme.title|length > 20 else meme.title or 'Без названия' }}
+                                            </div>
+                                        </td>
+                                        <td>{{ meme.author_name or 'Аноним' }}</td>
+                                        <td>
+                                            {% if meme.status == 'pending' %}
+                                            <span class="badge bg-warning">Ожидает</span>
+                                            {% elif meme.status == 'approved' %}
+                                            <span class="badge bg-success">Одобрен</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Отклонен</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ meme.created_at[:10] if meme.created_at else '' }}</td>
+                                        <td>
+                                            {% if meme.status == 'pending' %}
+                                            <button class="btn btn-success btn-sm btn-approve" data-id="{{ meme.id }}">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm btn-reject" data-id="{{ meme.id }}">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                            {% endif %}
+                                            <a href="/meme/{{ meme.id }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Статистика</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush" style="background: transparent;">
+                            <li class="list-group-item d-flex justify-content-between" style="background: transparent; border-color: rgba(108, 92, 231, 0.2);">
+                                <span>Всего лайков</span>
+                                <strong>{{ stats.total_likes or 0 }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between" style="background: transparent; border-color: rgba(108, 92, 231, 0.2);">
+                                <span>Всего просмотров</span>
+                                <strong>{{ stats.total_views or 0 }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between" style="background: transparent; border-color: rgba(108, 92, 231, 0.2);">
+                                <span>Шаров</span>
+                                <strong>{{ stats.total_shares or 0 }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between" style="background: transparent; border-color: rgba(108, 92, 231, 0.2);">
+                                <span>Открытых жалоб</span>
+                                <strong class="{% if stats.open_reports %}text-danger{% endif %}">{{ stats.open_reports or 0 }}</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Top Categories -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-folder"></i> Топ категорий</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for cat in category_stats %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>{{ cat.icon or '📁' }} {{ cat.name }}</span>
+                            <span class="badge bg-primary">{{ cat.meme_count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const res = await fetch(`/api/admin/meme/${this.dataset.id}/approve`, {method: 'POST'});
+            if (res.ok) location.reload();
+        });
+    });
+    
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const reason = prompt('Причина отклонения (необязательно):');
+            const res = await fetch(`/api/admin/meme/${this.dataset.id}/reject`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({reason: reason})
+            });
+            if (res.ok) location.reload();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ share.title or 'Мем' }} - Поделились с вами{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center mb-4">
+            <i class="bi bi-share display-4 text-primary"></i>
+            <h2 class="mt-2">С вами поделились мемом!</h2>
+            <p class="text-muted">{{ share.sender_name or 'Кто-то' }} отправил вам этот мем</p>
+        </div>
+        
+        <div class="card">
+            {% if share.file_type == 'video' %}
+            <video src="/data/uploads/{{ share.filename }}" class="card-img-top" controls autoplay muted loop
+                   style="max-height: 500px; object-fit: contain; background: #000;"></video>
+            {% else %}
+            <img src="/data/uploads/{{ share.filename }}" class="card-img-top" 
+                 alt="{{ share.title or 'Мем' }}" 
+                 style="max-height: 500px; object-fit: contain; background: #000;">
+            {% endif %}
+            
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ share.title or 'Мем' }}</h4>
+                
+                {% if share.description %}
+                <p class="card-text text-muted">{{ share.description }}</p>
+                {% endif %}
+                
+                <div class="d-flex justify-content-center gap-3 my-3">
+                    <span><i class="bi bi-heart text-danger"></i> {{ share.likes_count or 0 }} лайков</span>
+                    <span><i class="bi bi-eye"></i> {{ share.views_count or 0 }} просмотров</span>
+                </div>
+                
+                <hr style="border-color: rgba(108, 92, 231, 0.3);">
+                
+                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                    <a href="/meme/{{ share.meme_id }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-right"></i> Перейти к мему
+                    </a>
+                    <a href="/data/uploads/{{ share.filename }}" download class="btn btn-outline-success">
+                        <i class="bi bi-download"></i> Скачать
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <p class="text-muted">Хотите больше мемов?</p>
+            <a href="/" class="btn btn-outline-primary">
+                <i class="bi bi-emoji-laughing"></i> Открыть MemePlatform
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

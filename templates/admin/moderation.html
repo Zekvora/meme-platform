@@ -1,0 +1,214 @@
+{% extends "admin/dashboard.html" %}
+
+{% block title %}Модерация - MemePlatform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-lg-2">
+        <div class="sidebar">
+            <h6 class="text-muted mb-3">АДМИН-ПАНЕЛЬ</h6>
+            <nav class="admin-nav">
+                <a class="nav-link" href="/admin">
+                    <i class="bi bi-speedometer2"></i> Дашборд
+                </a>
+                <a class="nav-link active" href="/admin/moderation">
+                    <i class="bi bi-hourglass-split"></i> Модерация
+                    {% if pending_count %}
+                    <span class="badge bg-danger float-end">{{ pending_count }}</span>
+                    {% endif %}
+                </a>
+                <a class="nav-link" href="/admin/memes">
+                    <i class="bi bi-collection"></i> Все мемы
+                </a>
+                <a class="nav-link" href="/admin/categories">
+                    <i class="bi bi-folder"></i> Категории
+                </a>
+                <a class="nav-link" href="/admin/users">
+                    <i class="bi bi-people"></i> Пользователи
+                </a>
+                <a class="nav-link" href="/admin/reports">
+                    <i class="bi bi-flag"></i> Жалобы
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-hourglass-split text-warning"></i> Модерация</h2>
+            
+            {% if memes %}
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="bulkApprove()">
+                    <i class="bi bi-check-all"></i> Одобрить выбранные
+                </button>
+                <button class="btn btn-danger" onclick="bulkReject()">
+                    <i class="bi bi-x-lg"></i> Отклонить выбранные
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if memes %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 
+            {{ pending_count }} мем(ов) ожидают модерации
+        </div>
+        
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            {% for meme in memes %}
+            <div class="col" id="meme-{{ meme.id }}">
+                <div class="card meme-card h-100">
+                    <div class="position-relative">
+                        <div class="form-check position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                            <input class="form-check-input meme-checkbox" type="checkbox" 
+                                   value="{{ meme.id }}" id="check-{{ meme.id }}">
+                        </div>
+                        
+                        {% if meme.file_type == 'video' %}
+                        <video src="/data/uploads/{{ meme.filename }}" controls muted 
+                               style="width: 100%; height: 200px; object-fit: cover;"></video>
+                        {% else %}
+                        <img src="/data/uploads/{{ meme.filename }}" 
+                             style="width: 100%; height: 200px; object-fit: cover;"
+                             onclick="showFullImage('/data/uploads/{{ meme.filename }}')">
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-body">
+                        <h6 class="card-title">{{ meme.title or 'Без названия' }}</h6>
+                        
+                        {% if meme.category_name %}
+                        <span class="category-badge small mb-2 d-inline-block">
+                            {{ meme.category_icon or '📁' }} {{ meme.category_name }}
+                        </span>
+                        {% endif %}
+                        
+                        {% if meme.description %}
+                        <p class="card-text small text-muted">
+                            {{ meme.description[:100] + '...' if meme.description|length > 100 else meme.description }}
+                        </p>
+                        {% endif %}
+                        
+                        <p class="small text-muted mb-2">
+                            <i class="bi bi-person"></i> {{ meme.author_name or 'Аноним' }}<br>
+                            <i class="bi bi-clock"></i> {{ meme.created_at[:16] if meme.created_at else '' }}
+                        </p>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success flex-grow-1 btn-approve" data-id="{{ meme.id }}">
+                                <i class="bi bi-check-lg"></i> Одобрить
+                            </button>
+                            <button class="btn btn-danger flex-grow-1 btn-reject" data-id="{{ meme.id }}">
+                                <i class="bi bi-x-lg"></i> Отклонить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-check-circle display-1 text-success"></i>
+            <h3 class="mt-3">Всё проверено!</h3>
+            <p class="text-muted">Нет мемов, ожидающих модерации</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Full Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-body text-center p-0">
+                <img id="modalImage" class="img-fluid" style="max-height: 90vh;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showFullImage(src) {
+        document.getElementById('modalImage').src = src;
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+    
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            const res = await fetch(`/api/admin/meme/${id}/approve`, {method: 'POST'});
+            if (res.ok) {
+                document.getElementById('meme-' + id).remove();
+                updateCount();
+            }
+        });
+    });
+    
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            const reason = prompt('Причина отклонения (необязательно):');
+            const res = await fetch(`/api/admin/meme/${id}/reject`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({reason: reason || ''})
+            });
+            if (res.ok) {
+                document.getElementById('meme-' + id).remove();
+                updateCount();
+            }
+        });
+    });
+    
+    function getSelectedIds() {
+        return Array.from(document.querySelectorAll('.meme-checkbox:checked')).map(cb => parseInt(cb.value));
+    }
+    
+    async function bulkApprove() {
+        const ids = getSelectedIds();
+        if (!ids.length) {
+            alert('Выберите мемы');
+            return;
+        }
+        
+        const res = await fetch('/api/admin/bulk/approve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: ids})
+        });
+        
+        if (res.ok) location.reload();
+    }
+    
+    async function bulkReject() {
+        const ids = getSelectedIds();
+        if (!ids.length) {
+            alert('Выберите мемы');
+            return;
+        }
+        
+        const reason = prompt('Причина отклонения (необязательно):');
+        const res = await fetch('/api/admin/bulk/reject', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: ids, reason: reason || ''})
+        });
+        
+        if (res.ok) location.reload();
+    }
+    
+    function updateCount() {
+        const remaining = document.querySelectorAll('.meme-card').length;
+        if (remaining === 0) {
+            location.reload();
+        }
+    }
+</script>
+{% endblock %}

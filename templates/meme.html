@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meme.title or 'Мем' }} - MemePlatform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Meme -->
+        <div class="card">
+            {% if meme.file_type == 'video' %}
+            <video src="/data/uploads/{{ meme.filename }}" class="card-img-top" controls autoplay muted loop
+                   style="max-height: 600px; object-fit: contain; background: #000;"></video>
+            {% else %}
+            <img src="/data/uploads/{{ meme.filename }}" class="card-img-top" 
+                 alt="{{ meme.title or 'Мем' }}" 
+                 style="max-height: 600px; object-fit: contain; background: #000;">
+            {% endif %}
+            
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        {% if meme.category_name %}
+                        <span class="category-badge mb-2">
+                            {{ meme.category_icon or '📁' }} {{ meme.category_name }}
+                        </span>
+                        {% endif %}
+                        <h4 class="card-title mb-1">{{ meme.title or 'Без названия' }}</h4>
+                        <p class="text-muted small">
+                            <i class="bi bi-clock"></i> {{ meme.created_at[:10] if meme.created_at else '' }}
+                            · от {{ meme.author_name or 'Аноним' }}
+                        </p>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-outline-danger like-btn {% if meme.user_liked %}liked{% endif %}" data-id="{{ meme.id }}">
+                            <i class="bi {% if meme.user_liked %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                            <span class="like-count">{{ meme.likes_count or 0 }}</span>
+                        </button>
+                        <button class="btn btn-outline-primary btn-share" data-id="{{ meme.id }}">
+                            <i class="bi bi-share"></i>
+                        </button>
+                        <a href="/data/uploads/{{ meme.filename }}" download class="btn btn-outline-success">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                {% if meme.description %}
+                <p class="card-text">{{ meme.description }}</p>
+                {% endif %}
+                
+                {% if meme.tags %}
+                <div class="mb-3">
+                    {% for tag in meme.tags.split(',') %}
+                    <a href="/?search={{ tag.strip() }}" class="badge bg-secondary text-decoration-none me-1">
+                        #{{ tag.strip() }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="d-flex gap-3 text-muted small">
+                    <span><i class="bi bi-eye"></i> {{ meme.views_count or 0 }} просмотров</span>
+                    <span><i class="bi bi-share"></i> {{ meme.shares_count or 0 }} раз поделились</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comments -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Комментарии</h5>
+            </div>
+            <div class="card-body">
+                {% if user %}
+                <form class="mb-4" method="POST" action="/api/meme/{{ meme.id }}/comment">
+                    <div class="input-group">
+                        <input type="text" name="text" class="form-control" 
+                               placeholder="Напишите комментарий..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <p class="text-muted">
+                    <a href="/login">Войдите</a>, чтобы оставить комментарий
+                </p>
+                {% endif %}
+                
+                {% if comments %}
+                    {% for comment in comments %}
+                    <div class="d-flex mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                                 style="width: 40px; height: 40px;">
+                                <i class="bi bi-person"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <strong>{{ comment.author_name or 'Аноним' }}</strong>
+                            <span class="text-muted small">{{ comment.created_at[:16] if comment.created_at else '' }}</span>
+                            <p class="mb-0">{{ comment.text }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="text-muted text-center">Пока нет комментариев</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="sidebar">
+            <h5><i class="bi bi-fire"></i> Похожие мемы</h5>
+            
+            {% if related_memes %}
+                {% for rmeme in related_memes %}
+                <div class="d-flex mb-3">
+                    <a href="/meme/{{ rmeme.id }}" class="flex-shrink-0">
+                        {% if rmeme.file_type == 'video' %}
+                        <video src="/data/uploads/{{ rmeme.filename }}" 
+                               style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px;" muted></video>
+                        {% else %}
+                        <img src="/data/uploads/{{ rmeme.filename }}" 
+                             style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px;">
+                        {% endif %}
+                    </a>
+                    <div class="ms-3">
+                        <a href="/meme/{{ rmeme.id }}" class="text-white text-decoration-none">
+                            {{ rmeme.title[:30] + '...' if rmeme.title and rmeme.title|length > 30 else rmeme.title or 'Мем' }}
+                        </a>
+                        <div class="small text-muted">
+                            <i class="bi bi-heart"></i> {{ rmeme.likes_count or 0 }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p class="text-muted">Похожих мемов не найдено</p>
+            {% endif %}
+        </div>
+        
+        <!-- Share block -->
+        <div class="sidebar mt-4">
+            <h5><i class="bi bi-share"></i> Поделиться</h5>
+            <div class="d-grid gap-2">
+                <a href="https://t.me/share/url?url={{ request.url }}" target="_blank" 
+                   class="btn btn-outline-info">
+                    <i class="bi bi-telegram"></i> Telegram
+                </a>
+                <a href="https://vk.com/share.php?url={{ request.url }}" target="_blank" 
+                   class="btn btn-outline-primary">
+                    <i class="bi bi-share"></i> ВКонтакте
+                </a>
+                <button class="btn btn-outline-secondary" onclick="copyLink()">
+                    <i class="bi bi-clipboard"></i> Копировать ссылку
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href);
+        alert('Ссылка скопирована!');
+    }
+</script>
+{% endblock %}

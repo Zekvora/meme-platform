@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - MemePlatform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <!-- Profile Card -->
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center mb-3"
+                     style="width: 100px; height: 100px;">
+                    <i class="bi bi-person display-3"></i>
+                </div>
+                
+                <h4>{{ user.display_name or user.username or 'User' }}</h4>
+                <p class="text-muted">@{{ user.username or user.telegram_id }}</p>
+                
+                {% if user.is_admin %}
+                <span class="badge bg-warning mb-3">
+                    <i class="bi bi-shield-check"></i> Администратор
+                </span>
+                {% endif %}
+                
+                <p class="small text-muted">
+                    На платформе с {{ user.created_at[:10] if user.created_at else 'недавно' }}
+                </p>
+            </div>
+            
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between" style="background: transparent; border-color: rgba(108, 92, 231, 0.2);">
+                    <span><i class="bi bi-collection"></i> Мемов</span>
+                    <strong>{{ stats.memes or 0 }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between" style="background: transparent; border-color: rgba(108, 92, 231, 0.2);">
+                    <span><i class="bi bi-heart"></i> Получено лайков</span>
+                    <strong>{{ stats.likes_received or 0 }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between" style="background: transparent; border-color: rgba(108, 92, 231, 0.2);">
+                    <span><i class="bi bi-eye"></i> Просмотров</span>
+                    <strong>{{ stats.views or 0 }}</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <!-- Settings -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Настройки профиля</h5>
+            </div>
+            <div class="card-body">
+                {% if success %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> {{ success }}
+                </div>
+                {% endif %}
+                
+                {% if error %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle"></i> {{ error }}
+                </div>
+                {% endif %}
+                
+                <form method="POST" action="/profile">
+                    <div class="mb-3">
+                        <label class="form-label">Отображаемое имя</label>
+                        <input type="text" name="display_name" class="form-control" 
+                               value="{{ user.display_name or '' }}" maxlength="50">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" 
+                               value="{{ user.email or '' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Telegram ID</label>
+                        <input type="text" class="form-control" 
+                               value="{{ user.telegram_id or 'Не привязан' }}" disabled>
+                        {% if not user.telegram_id %}
+                        <small class="text-muted">
+                            Привяжите аккаунт в нашем <a href="https://t.me/YourBot">Telegram боте</a>
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    <hr style="border-color: rgba(108, 92, 231, 0.3);">
+                    
+                    <h6 class="mb-3">Сменить пароль</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Текущий пароль</label>
+                        <input type="password" name="current_password" class="form-control">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Новый пароль</label>
+                            <input type="password" name="new_password" class="form-control" minlength="6">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Подтверждение</label>
+                            <input type="password" name="confirm_password" class="form-control" minlength="6">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Сохранить
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Liked Memes -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-heart"></i> Понравившиеся мемы</h5>
+                <a href="/my-likes" class="btn btn-sm btn-outline-primary">Все</a>
+            </div>
+            <div class="card-body">
+                {% if liked_memes %}
+                <div class="row row-cols-3 g-2">
+                    {% for meme in liked_memes[:6] %}
+                    <div class="col">
+                        <a href="/meme/{{ meme.id }}">
+                            <img src="/data/uploads/{{ meme.filename }}" 
+                                 class="img-fluid rounded" style="aspect-ratio: 1; object-fit: cover;">
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-0">Вы еще не лайкали мемы</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

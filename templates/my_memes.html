@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Мои мемы - MemePlatform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-collection text-primary"></i> Мои мемы</h2>
+    <a href="/upload" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Загрузить новый
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="btn-group" role="group">
+            <a href="/my-memes" class="btn btn-outline-primary {% if not status_filter %}active{% endif %}">
+                Все <span class="badge bg-secondary">{{ stats.total or 0 }}</span>
+            </a>
+            <a href="/my-memes?status=pending" class="btn btn-outline-warning {% if status_filter == 'pending' %}active{% endif %}">
+                На модерации <span class="badge bg-warning">{{ stats.pending or 0 }}</span>
+            </a>
+            <a href="/my-memes?status=approved" class="btn btn-outline-success {% if status_filter == 'approved' %}active{% endif %}">
+                Одобрено <span class="badge bg-success">{{ stats.approved or 0 }}</span>
+            </a>
+            <a href="/my-memes?status=rejected" class="btn btn-outline-danger {% if status_filter == 'rejected' %}active{% endif %}">
+                Отклонено <span class="badge bg-danger">{{ stats.rejected or 0 }}</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if memes %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+    {% for meme in memes %}
+    <div class="col">
+        <div class="card meme-card h-100">
+            <div class="position-relative">
+                <a href="/meme/{{ meme.id }}">
+                    {% if meme.file_type == 'video' %}
+                    <video src="/data/uploads/{{ meme.filename }}" muted></video>
+                    {% else %}
+                    <img src="/data/uploads/{{ meme.filename }}" alt="{{ meme.title or 'Мем' }}">
+                    {% endif %}
+                </a>
+                
+                <!-- Status badge -->
+                {% if meme.status == 'pending' %}
+                <span class="position-absolute top-0 end-0 m-2 badge bg-warning">
+                    <i class="bi bi-hourglass-split"></i> На модерации
+                </span>
+                {% elif meme.status == 'approved' %}
+                <span class="position-absolute top-0 end-0 m-2 badge bg-success">
+                    <i class="bi bi-check-circle"></i> Одобрено
+                </span>
+                {% elif meme.status == 'rejected' %}
+                <span class="position-absolute top-0 end-0 m-2 badge bg-danger">
+                    <i class="bi bi-x-circle"></i> Отклонено
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="card-body">
+                <h6 class="card-title mb-1">
+                    {{ meme.title or 'Без названия' }}
+                </h6>
+                
+                {% if meme.category_name %}
+                <span class="category-badge small mb-2 d-inline-block">
+                    {{ meme.category_icon or '📁' }} {{ meme.category_name }}
+                </span>
+                {% endif %}
+                
+                <p class="card-text small text-muted mb-2">
+                    {{ meme.created_at[:10] if meme.created_at else '' }}
+                </p>
+                
+                {% if meme.status == 'rejected' and meme.reject_reason %}
+                <div class="alert alert-danger small py-2 mb-2">
+                    <i class="bi bi-info-circle"></i> {{ meme.reject_reason }}
+                </div>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="meme-stats">
+                        <span><i class="bi bi-heart"></i> {{ meme.likes_count or 0 }}</span>
+                        <span><i class="bi bi-eye"></i> {{ meme.views_count or 0 }}</span>
+                    </div>
+                    
+                    <div class="btn-group btn-group-sm">
+                        {% if meme.status == 'approved' %}
+                        <button class="btn btn-outline-primary btn-sm btn-share" data-id="{{ meme.id }}">
+                            <i class="bi bi-share"></i>
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-outline-danger btn-sm btn-delete" data-id="{{ meme.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox display-1 text-muted"></i>
+    <h3 class="mt-3">
+        {% if status_filter %}
+            Нет мемов со статусом "{{ status_filter }}"
+        {% else %}
+            У вас пока нет мемов
+        {% endif %}
+    </h3>
+    <p class="text-muted">Загрузите свой первый мем!</p>
+    <a href="/upload" class="btn btn-primary">
+        <i class="bi bi-cloud-upload"></i> Загрузить мем
+    </a>
+</div>
+{% endif %}
+{% endblock %}
