@@ -46,8 +46,14 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup."""
+    """Initialize database and seed templates on startup."""
     await db.init_db()
+    
+    # Auto-seed templates if database is empty
+    memes = await db.get_memes(limit=1)
+    if not memes:
+        from sync_templates import sync_templates
+        await sync_templates()
 
 
 # ═══════════════════════════════════════════════

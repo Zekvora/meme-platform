@@ -4,6 +4,7 @@ __pycache__/
 venv/
 .env
 data/generated/
-data/uploads/
+# Keep uploads for Railway deployment
+# data/uploads/
 *.db
 *.log
