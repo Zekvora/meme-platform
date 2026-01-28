@@ -478,15 +478,16 @@ async def create_meme(
     description: str = None,
     category_id: int = None,
     file_type: str = "image",
-    file_size: int = 0
+    file_size: int = 0,
+    status: str = "pending"
 ) -> int:
-    """Create new meme (pending status)."""
+    """Create new meme."""
     async with aiosqlite.connect(DATABASE_PATH) as db:
         cursor = await db.execute(
             """INSERT INTO memes 
-               (author_id, filename, title, description, category_id, file_type, file_size)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (author_id, filename, title, description, category_id, file_type, file_size)
+               (author_id, filename, title, description, category_id, file_type, file_size, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (author_id, filename, title, description, category_id, file_type, file_size, status)
         )
         await db.commit()
         return cursor.lastrowid
