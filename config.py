@@ -21,8 +21,9 @@ for d in [DATA_DIR, TEMPLATES_DIR, GENERATED_DIR, UPLOADS_DIR]:
 
 # === Bot ===
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN is required in .env file")
+# Don't raise error for web-only deployment
+# if not BOT_TOKEN:
+#     raise ValueError("BOT_TOKEN is required in .env file")
 
 # === Admins ===
 ADMIN_IDS: set[int] = set()

@@ -44,6 +44,12 @@ app.mount("/data/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on startup."""
+    await db.init_db()
+
+
 # ═══════════════════════════════════════════════
 # DEPENDENCIES
 # ═══════════════════════════════════════════════
