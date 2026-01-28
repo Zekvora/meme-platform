@@ -51,7 +51,7 @@ MAX_IMAGE_SIZE = (4096, 4096)  # Maximum image dimensions
 TEMPLATES_PER_PAGE = 6
 
 # === Web Platform ===
-WEB_URL = os.getenv("WEB_URL", "http://localhost:8000")
+WEB_URL = os.getenv("WEB_URL", "https://web-production-9a1f5.up.railway.app")
 
 # === Logging ===
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

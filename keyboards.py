@@ -14,6 +14,7 @@ from locales import get_text
 
 def main_menu_kb(lang: str = "ru") -> InlineKeyboardMarkup:
     """Main menu keyboard."""
+    from config import WEB_URL
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
@@ -29,8 +30,8 @@ def main_menu_kb(lang: str = "ru") -> InlineKeyboardMarkup:
     )
     builder.row(
         InlineKeyboardButton(
-            text="🌐 Веб-платформа",
-            callback_data="open_web"
+            text="🌐 Открыть MemePlatform",
+            url=WEB_URL
         )
     )
     builder.row(
