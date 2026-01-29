@@ -71,17 +71,24 @@ async def cmd_weblogin(message: Message):
     
     # Generate code
     code = await db_new.generate_admin_code(message.from_user.id)
+    tg_id = message.from_user.id
     
-    # Send code in private message
+    # Build login URL
+    login_url = f"https://web-production-9a1f5.up.railway.app/login?token={code}&tg={tg_id}"
+    
+    # Send link
     text = (
-        "🔐 <b>Код для входа в веб-панель</b>\n\n"
-        f"Ваш Telegram ID: <code>{message.from_user.id}</code>\n"
-        f"Одноразовый код: <code>{code}</code>\n\n"
-        "⏱ Код действителен 5 минут\n"
-        "⚠️ Не передавайте код третьим лицам!"
+        "🔐 <b>Вход в веб-панель</b>\n\n"
+        f"Нажмите кнопку ниже для входа:\n\n"
+        "⏱ Ссылка действительна 10 минут\n"
+        "⚠️ Не передавайте ссылку третьим лицам!"
     )
     
-    await message.answer(text, parse_mode="HTML")
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔓 Войти в панель", url=login_url)]
+    ])
+    
+    await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
 
 
 # ═══════════════════════════════════════════════
