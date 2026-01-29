@@ -320,10 +320,11 @@ async def delete_session(token: str):
 # ADMIN LOGIN CODES
 # ═══════════════════════════════════════════════
 
-async def generate_admin_code(telegram_id: int, minutes: int = 5) -> str:
+async def generate_admin_code(telegram_id: int, minutes: int = 10) -> str:
     """Generate one-time admin login code."""
     code = secrets.token_urlsafe(16)
-    expires_at = datetime.now() + timedelta(minutes=minutes)
+    # Use UTC time to match SQLite CURRENT_TIMESTAMP
+    expires_at = datetime.utcnow() + timedelta(minutes=minutes)
     
     async with aiosqlite.connect(DATABASE_PATH) as db:
         # Delete old codes for this user
@@ -331,10 +332,10 @@ async def generate_admin_code(telegram_id: int, minutes: int = 5) -> str:
             "DELETE FROM admin_codes WHERE telegram_id = ?",
             (telegram_id,)
         )
-        # Create new code
+        # Create new code - use SQLite datetime format (space, not T)
         await db.execute(
             "INSERT INTO admin_codes (telegram_id, code, expires_at) VALUES (?, ?, ?)",
-            (telegram_id, code, expires_at.isoformat())
+            (telegram_id, code, expires_at.strftime("%Y-%m-%d %H:%M:%S"))
         )
         await db.commit()
     
