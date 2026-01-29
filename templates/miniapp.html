@@ -484,7 +484,15 @@ document.getElementById('createPackBtn').onclick = () => {
     const name = document.getElementById('packName').value.replace(/[^a-zA-Z0-9_]/g, '');
     const title = document.getElementById('packTitle').value || 'My Stickers';
     const total = customStickers.length + selectedStickers.length;
-    if(!name || total === 0) return;
+    
+    if(!name) {
+        tg.showAlert('Введите название пака (только английские буквы)');
+        return;
+    }
+    if(total === 0) {
+        tg.showAlert('Выберите хотя бы один стикер');
+        return;
+    }
     
     const data = {
         action: 'create_sticker_pack',
@@ -493,7 +501,10 @@ document.getElementById('createPackBtn').onclick = () => {
         stickers: selectedStickers.map(id => memes.find(m=>m.id===id)?.filename).filter(Boolean),
         custom_stickers: customStickers.map(s => s.base64)
     };
+    
+    console.log('Sending sticker pack data:', data);
     tg.sendData(JSON.stringify(data));
+    tg.close();
 };
 
 // Admin
