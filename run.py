@@ -11,8 +11,9 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import MenuButtonWebApp, WebAppInfo
 
-from config import BOT_TOKEN, LOG_LEVEL
+from config import BOT_TOKEN, LOG_LEVEL, WEB_URL
 from database import init_db
 import database_new as db_new
 from handlers import user_router, admin_router
@@ -78,6 +79,18 @@ async def main():
     # Register routers
     dp.include_router(admin_router)
     dp.include_router(user_router)
+    
+    # Set Menu Button (left side of input field)
+    try:
+        await bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="🎭 Каталог",
+                web_app=WebAppInfo(url=f"{WEB_URL}/miniapp")
+            )
+        )
+        logger.info("✅ Menu button set")
+    except Exception as e:
+        logger.warning(f"Could not set menu button: {e}")
     
     logger.info("✅ Telegram bot is ready!")
     logger.info("=" * 50)

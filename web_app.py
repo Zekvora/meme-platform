@@ -538,6 +538,13 @@ async def api_delete_meme(request: Request, meme_id: int):
     return {"success": True}
 
 
+@app.post("/api/meme/{meme_id}/view")
+async def api_view_meme(meme_id: int):
+    """Increment view count."""
+    await db.increment_meme_views(meme_id)
+    return {"success": True}
+
+
 @app.post("/api/meme/{meme_id}/like")
 async def api_toggle_like(request: Request, meme_id: int):
     """Toggle like - works for anonymous users too."""
