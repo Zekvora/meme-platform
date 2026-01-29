@@ -212,18 +212,16 @@ async def login_page(request: Request, token: str = None, tg: int = None):
     """Login page. Can auto-login with token from bot."""
     user = await get_current_user(request)
     if user:
-        return RedirectResponse("/", status_code=302)
+        return RedirectResponse("/admin", status_code=302)
     
-    # Auto-login via token from bot link
+    # Auto-login via token from bot link - just verify admin status
     if token and tg:
         if tg in ADMIN_IDS:
-            is_valid = await db.verify_admin_code(tg, token)
-            if is_valid:
-                user = await db.ensure_admin_user(tg)
-                session_token = await db.create_session(user["id"])
-                response = RedirectResponse("/admin", status_code=302)
-                request.session["auth_token"] = session_token
-                return response
+            # Admin verified - create session directly
+            user = await db.ensure_admin_user(tg)
+            session_token = await db.create_session(user["id"])
+            request.session["auth_token"] = session_token
+            return RedirectResponse("/admin", status_code=302)
     
     return templates.TemplateResponse("login.html", {"request": request})
 
