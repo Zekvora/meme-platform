@@ -4,6 +4,8 @@ MemeMakerBot - User Handlers
 """
 import logging
 import json
+import base64
+import tempfile
 from pathlib import Path
 
 from aiogram import Router, F, Bot
@@ -65,21 +67,38 @@ async def handle_web_app_data(message: Message, state: FSMContext, bot: Bot):
             # User wants to create sticker pack
             name = data.get('name', '')
             title = data.get('title', 'Стикерпак')
-            stickers = data.get('stickers', [])
+            stickers = data.get('stickers', [])  # filenames from catalog
+            custom_stickers = data.get('custom_stickers', [])  # base64 images
             
-            if not name or not stickers:
+            total_stickers = len(stickers) + len(custom_stickers)
+            if not name or total_stickers == 0:
                 await message.answer("❌ Укажите название и выберите стикеры")
                 return
             
             await message.answer("⏳ Создаю стикерпак...")
             
             try:
-                # Create sticker pack
+                # Collect all sticker files (existing + custom)
                 sticker_files = []
+                temp_files = []
+                
+                # Add existing stickers from catalog
                 for filename in stickers[:50]:
                     file_path = UPLOADS_DIR / filename
                     if file_path.exists():
                         sticker_files.append(file_path)
+                
+                # Add custom uploaded stickers (base64)
+                for b64_data in custom_stickers[:50 - len(sticker_files)]:
+                    try:
+                        img_data = base64.b64decode(b64_data)
+                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+                        temp_file.write(img_data)
+                        temp_file.close()
+                        sticker_files.append(Path(temp_file.name))
+                        temp_files.append(temp_file.name)
+                    except Exception as e:
+                        logger.warning(f"Could not decode custom sticker: {e}")
                 
                 if not sticker_files:
                     await message.answer("❌ Не найдены файлы стикеров")
@@ -114,6 +133,13 @@ async def handle_web_app_data(message: Message, state: FSMContext, bot: Bot):
                         )
                     except Exception as e:
                         logger.warning(f"Could not add sticker: {e}")
+                
+                # Cleanup temp files
+                for temp_path in temp_files:
+                    try:
+                        Path(temp_path).unlink()
+                    except:
+                        pass
                 
                 await message.answer(
                     f"✅ <b>Стикерпак создан!</b>\n\n"

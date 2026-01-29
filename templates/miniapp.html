@@ -158,8 +158,20 @@
         <div class="header"><h1>🎨 Стикерпак</h1></div>
         <div class="form-group"><label>Название пака</label><input type="text" id="packName" placeholder="my_cool_stickers"></div>
         <div class="form-group"><label>Заголовок</label><input type="text" id="packTitle" placeholder="Мои стикеры"></div>
-        <p style="padding:0 16px;font-size:12px;color:var(--hint)">Выберите мемы для стикерпака (до 50):</p>
+        
+        <p style="padding:0 16px;font-size:12px;color:var(--hint)">📤 Загрузите свои фото (до 50):</p>
+        <div style="padding:0 16px 12px">
+            <div class="upload-area" id="stickerUploadArea" style="padding:16px;min-height:auto">
+                <input type="file" id="stickerFileInput" accept="image/*" multiple hidden>
+                <i class="bi bi-images" style="font-size:24px"></i>
+                <p>Нажмите чтобы выбрать фото</p>
+            </div>
+        </div>
+        <div class="sticker-grid" id="customStickerGrid" style="display:none"></div>
+        
+        <p style="padding:0 16px;font-size:12px;color:var(--hint)">📁 Или выберите из каталога:</p>
         <div class="sticker-grid" id="stickerGrid"></div>
+        <div id="stickerCount" style="text-align:center;padding:8px;font-size:12px;color:var(--hint)">Выбрано: 0/50</div>
         <div style="padding:16px"><button class="btn btn-primary" id="createPackBtn" style="width:100%" disabled>Создать стикерпак</button></div>
     </div>
 
@@ -221,7 +233,7 @@ tg.ready();
 tg.expand();
 
 const ADMIN_IDS = [1131212636];
-let memes = [], categories = [], currentMeme = null, selectedStickers = [];
+let memes = [], categories = [], currentMeme = null, selectedStickers = [], customStickers = [];
 let liked = JSON.parse(localStorage.getItem('liked') || '[]');
 let userId = tg.initDataUnsafe?.user?.id || 0;
 let isAdmin = ADMIN_IDS.includes(userId);
@@ -292,13 +304,37 @@ function loadStickerGrid() {
             <img src="/data/uploads/${m.filename}" onerror="this.style.display='none'">
         </div>
     `).join('');
+    updateStickerCount();
+}
+
+function loadCustomStickerGrid() {
+    const g = document.getElementById('customStickerGrid');
+    if(customStickers.length === 0) { g.style.display = 'none'; return; }
+    g.style.display = 'grid';
+    g.innerHTML = customStickers.map((s, i) => `
+        <div class="sticker-item selected" style="position:relative">
+            <img src="${s.preview}">
+            <div onclick="removeCustomSticker(${i})" style="position:absolute;top:2px;right:2px;width:18px;height:18px;background:var(--danger);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer">✕</div>
+        </div>
+    `).join('');
+    updateStickerCount();
+}
+
+function removeCustomSticker(index) {
+    customStickers.splice(index, 1);
+    loadCustomStickerGrid();
+}
+
+function updateStickerCount() {
+    const total = customStickers.length + selectedStickers.length;
+    document.getElementById('stickerCount').textContent = `Выбрано: ${total}/50`;
+    document.getElementById('createPackBtn').disabled = total === 0 || !document.getElementById('packName').value;
 }
 
 function toggleSticker(id) {
     if(selectedStickers.includes(id)) selectedStickers = selectedStickers.filter(x=>x!==id);
-    else if(selectedStickers.length < 50) selectedStickers.push(id);
+    else if(customStickers.length + selectedStickers.length < 50) selectedStickers.push(id);
     loadStickerGrid();
-    document.getElementById('createPackBtn').disabled = !selectedStickers.length || !document.getElementById('packName').value;
 }
 
 function openMeme(id) {
@@ -418,21 +454,45 @@ document.getElementById('uploadBtn').onclick = async () => {
     btn.disabled = false; btn.textContent = 'Загрузить';
 };
 
-// Sticker pack
-document.getElementById('packName').oninput = () => {
-    document.getElementById('createPackBtn').disabled = !selectedStickers.length || !document.getElementById('packName').value;
+// Sticker pack name input
+document.getElementById('packName').oninput = updateStickerCount;
+
+// Custom sticker upload
+document.getElementById('stickerUploadArea').onclick = () => document.getElementById('stickerFileInput').click();
+document.getElementById('stickerFileInput').onchange = async e => {
+    const files = Array.from(e.target.files);
+    const remaining = 50 - customStickers.length - selectedStickers.length;
+    const toAdd = files.slice(0, remaining);
+    
+    for(const file of toAdd) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            customStickers.push({
+                file: file,
+                preview: reader.result,
+                base64: reader.result.split(',')[1]
+            });
+            loadCustomStickerGrid();
+        };
+        reader.readAsDataURL(file);
+    }
+    e.target.value = '';
 };
 
 document.getElementById('createPackBtn').onclick = () => {
     const name = document.getElementById('packName').value.replace(/[^a-zA-Z0-9_]/g, '');
     const title = document.getElementById('packTitle').value || 'My Stickers';
-    if(!name || !selectedStickers.length) return;
-    tg.sendData(JSON.stringify({
+    const total = customStickers.length + selectedStickers.length;
+    if(!name || total === 0) return;
+    
+    const data = {
         action: 'create_sticker_pack',
         name: name + '_by_' + (tg.initDataUnsafe?.user?.username || 'user'),
         title: title,
-        stickers: selectedStickers.map(id => memes.find(m=>m.id===id)?.filename).filter(Boolean)
-    }));
+        stickers: selectedStickers.map(id => memes.find(m=>m.id===id)?.filename).filter(Boolean),
+        custom_stickers: customStickers.map(s => s.base64)
+    };
+    tg.sendData(JSON.stringify(data));
 };
 
 // Admin
