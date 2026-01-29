@@ -276,15 +276,16 @@ async function loadMemes(cat='', search='') {
     const g = document.getElementById('grid');
     g.innerHTML = '<div class="loading" style="grid-column:span 2"><div class="spinner"></div></div>';
     try {
-        let url = '/api/memes?limit=100';
+        let url = '/api/memes?limit=100&_t=' + Date.now();
         if(cat) url += '&category=' + cat;
         if(search) url += '&search=' + encodeURIComponent(search);
         const r = await fetch(url);
         memes = await r.json();
+        console.log('Loaded memes:', memes.length);
         if(!memes.length) { g.innerHTML = '<div class="empty" style="grid-column:span 2"><i class="bi bi-emoji-frown" style="font-size:40px"></i><p>Нет мемов</p></div>'; return; }
         g.innerHTML = memes.map(m => `
             <div class="card" onclick="openMeme(${m.id})">
-                <img src="/data/uploads/${m.filename}" onerror="this.src='/static/placeholder.png'" loading="lazy">
+                <img src="/data/uploads/${m.filename}?v=${Date.now()}" onerror="this.onerror=null;this.src='/static/placeholder.png'" loading="lazy">
                 <div class="info">
                     <div class="title">${m.title||'Мем'}</div>
                     <div class="stats"><span>❤️ ${m.likes_count||0}</span><span>👁 ${m.views_count||0}</span></div>
