@@ -65,50 +65,6 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Comments -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Комментарии</h5>
-            </div>
-            <div class="card-body">
-                {% if user %}
-                <form class="mb-4" method="POST" action="/api/meme/{{ meme.id }}/comment">
-                    <div class="input-group">
-                        <input type="text" name="text" class="form-control" 
-                               placeholder="Напишите комментарий..." required>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send"></i>
-                        </button>
-                    </div>
-                </form>
-                {% else %}
-                <p class="text-muted">
-                    <a href="/login">Войдите</a>, чтобы оставить комментарий
-                </p>
-                {% endif %}
-                
-                {% if comments %}
-                    {% for comment in comments %}
-                    <div class="d-flex mb-3">
-                        <div class="flex-shrink-0">
-                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
-                                 style="width: 40px; height: 40px;">
-                                <i class="bi bi-person"></i>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <strong>{{ comment.author_name or 'Аноним' }}</strong>
-                            <span class="text-muted small">{{ comment.created_at[:16] if comment.created_at else '' }}</span>
-                            <p class="mb-0">{{ comment.text }}</p>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <p class="text-muted text-center">Пока нет комментариев</p>
-                {% endif %}
-            </div>
-        </div>
     </div>
     
     <!-- Sidebar -->

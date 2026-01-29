@@ -270,11 +270,8 @@ async def logout(request: Request):
 
 @app.get("/upload", response_class=HTMLResponse)
 async def upload_page(request: Request):
-    """Upload meme page."""
+    """Upload meme page - public access."""
     user = await get_current_user(request)
-    if not user:
-        return RedirectResponse("/login", status_code=302)
-    
     categories = await db.get_categories()
     
     return templates.TemplateResponse("upload.html", {
@@ -292,10 +289,9 @@ async def upload_meme(
     category_id: int = Form(None),
     file: UploadFile = File(...)
 ):
-    """Process meme upload."""
+    """Process meme upload - public access."""
     user = await get_current_user(request)
-    if not user:
-        raise HTTPException(status_code=401)
+    author_id = user["id"] if user else None
     
     # Validate file
     ext = Path(file.filename).suffix.lower()
@@ -317,7 +313,7 @@ async def upload_meme(
     # Create meme record
     file_type = get_file_type(filename)
     meme_id = await db.create_meme(
-        author_id=user["id"],
+        author_id=author_id,
         filename=filename,
         title=title,
         description=description,
@@ -326,7 +322,7 @@ async def upload_meme(
         file_size=len(content)
     )
     
-    return RedirectResponse(f"/my-memes?uploaded=1", status_code=302)
+    return RedirectResponse(f"/?uploaded=1", status_code=302)
 
 
 @app.get("/my-memes", response_class=HTMLResponse)
