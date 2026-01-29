@@ -684,10 +684,16 @@ async def api_bulk_delete(request: Request, meme_ids: list[int] = Form(...)):
 
 
 @app.get("/api/stats")
-async def api_stats(request: Request):
-    """Get statistics."""
-    user = await require_admin(request)
+async def api_stats():
+    """Get statistics - public for mini app."""
     return await db.get_stats()
+
+
+@app.get("/api/admin/pending")
+async def api_admin_pending():
+    """Get pending memes for moderation."""
+    memes = await db.get_memes(status="pending", limit=50)
+    return memes
 
 
 @app.get("/api/memes")
@@ -714,13 +720,13 @@ async def api_get_memes(
         offset=offset
     )
     
-    return {"memes": memes}
+    return memes
 
 
 @app.get("/api/categories")
 async def api_get_categories():
     """Get all categories."""
-    return {"categories": await db.get_categories()}
+    return await db.get_categories()
 
 
 # Run with: uvicorn web_app:app --host 0.0.0.0 --port 8000 --reload

@@ -3,10 +3,11 @@ MemeMakerBot - User Handlers
 8-position text placement flow
 """
 import logging
+import json
 from pathlib import Path
 
-from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram import Router, F, Bot
+from aiogram.types import Message, CallbackQuery, FSInputFile, InputSticker
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
@@ -27,6 +28,108 @@ from states import MemeCreation, MemeUpload
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+
+# ═══════════════════════════════════════════════
+# WEB APP DATA HANDLER
+# ═══════════════════════════════════════════════
+
+@router.message(F.web_app_data)
+async def handle_web_app_data(message: Message, state: FSMContext, bot: Bot):
+    """Handle data from Mini App."""
+    try:
+        data = json.loads(message.web_app_data.data)
+        action = data.get('action')
+        
+        if action == 'create_meme':
+            # User wants to create meme from template
+            filename = data.get('filename')
+            if filename:
+                template_path = UPLOADS_DIR / filename
+                if template_path.exists():
+                    await state.update_data(
+                        template_path=str(template_path),
+                        template_name=data.get('template_name', 'Мем'),
+                        text_blocks=[]
+                    )
+                    await state.set_state(MemeCreation.entering_text)
+                    await message.answer(
+                        "✏️ <b>Введите текст для мема</b>\n\n"
+                        "Отправьте текст который будет на меме.",
+                        parse_mode="HTML"
+                    )
+                else:
+                    await message.answer("❌ Шаблон не найден")
+            
+        elif action == 'create_sticker_pack':
+            # User wants to create sticker pack
+            name = data.get('name', '')
+            title = data.get('title', 'Стикерпак')
+            stickers = data.get('stickers', [])
+            
+            if not name or not stickers:
+                await message.answer("❌ Укажите название и выберите стикеры")
+                return
+            
+            await message.answer("⏳ Создаю стикерпак...")
+            
+            try:
+                # Create sticker pack
+                sticker_files = []
+                for filename in stickers[:50]:
+                    file_path = UPLOADS_DIR / filename
+                    if file_path.exists():
+                        sticker_files.append(file_path)
+                
+                if not sticker_files:
+                    await message.answer("❌ Не найдены файлы стикеров")
+                    return
+                
+                # First sticker to create pack
+                first_sticker = InputSticker(
+                    sticker=FSInputFile(sticker_files[0]),
+                    emoji_list=["😂"],
+                    format="static"
+                )
+                
+                await bot.create_new_sticker_set(
+                    user_id=message.from_user.id,
+                    name=name,
+                    title=title,
+                    stickers=[first_sticker]
+                )
+                
+                # Add remaining stickers
+                for file_path in sticker_files[1:]:
+                    try:
+                        sticker = InputSticker(
+                            sticker=FSInputFile(file_path),
+                            emoji_list=["😂"],
+                            format="static"
+                        )
+                        await bot.add_sticker_to_set(
+                            user_id=message.from_user.id,
+                            name=name,
+                            sticker=sticker
+                        )
+                    except Exception as e:
+                        logger.warning(f"Could not add sticker: {e}")
+                
+                await message.answer(
+                    f"✅ <b>Стикерпак создан!</b>\n\n"
+                    f"🎨 {title}\n"
+                    f"📦 {len(sticker_files)} стикеров\n\n"
+                    f"👉 t.me/addstickers/{name}",
+                    parse_mode="HTML"
+                )
+                
+            except Exception as e:
+                logger.error(f"Sticker pack error: {e}")
+                await message.answer(f"❌ Ошибка создания стикерпака: {str(e)[:100]}")
+                
+    except Exception as e:
+        logger.error(f"Web app data error: {e}")
+        await message.answer("❌ Ошибка обработки данных")
 
 
 # ═══════════════════════════════════════════════
