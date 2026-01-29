@@ -328,21 +328,66 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Like functionality
-        async function toggleLike(memeId, btn) {
+        // Локальное хранилище лайков для анонимных пользователей
+        function getLikedMemes() {
             try {
-                const response = await fetch(`/api/meme/${memeId}/like`, {method: 'POST'});
-                const data = await response.json();
-                
-                btn.classList.toggle('liked', data.liked);
-                const icon = btn.querySelector('i');
-                if (icon) {
-                    icon.className = data.liked ? 'bi bi-heart-fill' : 'bi bi-heart';
-                }
-                const countEl = btn.querySelector('.like-count');
-                if (countEl) countEl.textContent = data.likes_count;
-            } catch (e) {
-                alert('Войдите, чтобы ставить лайки');
+                return JSON.parse(localStorage.getItem('likedMemes') || '[]');
+            } catch { return []; }
+        }
+        
+        function setLikedMeme(memeId, liked) {
+            const likedMemes = getLikedMemes();
+            const id = String(memeId);
+            if (liked && !likedMemes.includes(id)) {
+                likedMemes.push(id);
+            } else if (!liked) {
+                const idx = likedMemes.indexOf(id);
+                if (idx > -1) likedMemes.splice(idx, 1);
             }
+            localStorage.setItem('likedMemes', JSON.stringify(likedMemes));
+        }
+        
+        function isMemeLiked(memeId) {
+            return getLikedMemes().includes(String(memeId));
+        }
+        
+        async function toggleLike(memeId, btn) {
+            const alreadyLiked = isMemeLiked(memeId) || btn.classList.contains('liked');
+            
+            if (alreadyLiked) {
+                // Убираем лайк локально
+                setLikedMeme(memeId, false);
+                btn.classList.remove('liked');
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = 'bi bi-heart';
+                const countEl = btn.querySelector('.like-count');
+                if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+            } else {
+                // Ставим лайк
+                try {
+                    const response = await fetch(`/api/meme/${memeId}/like`, {method: 'POST'});
+                    const data = await response.json();
+                    setLikedMeme(memeId, true);
+                    btn.classList.add('liked');
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = 'bi bi-heart-fill';
+                    const countEl = btn.querySelector('.like-count');
+                    if (countEl) countEl.textContent = data.likes_count;
+                } catch (e) {
+                    console.error('Like error:', e);
+                }
+            }
+        }
+        
+        // Восстановление состояния лайков при загрузке страницы
+        function restoreLikeStates() {
+            document.querySelectorAll('.like-btn[data-id]').forEach(btn => {
+                if (isMemeLiked(btn.dataset.id)) {
+                    btn.classList.add('liked');
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = 'bi bi-heart-fill';
+                }
+            });
         }
         
         // Share functionality
@@ -361,6 +406,9 @@
         
         // Bind events to data-attribute buttons
         document.addEventListener('DOMContentLoaded', function() {
+            // Restore liked states from localStorage
+            restoreLikeStates();
+            
             // Like buttons
             document.querySelectorAll('.like-btn[data-id]').forEach(btn => {
                 btn.addEventListener('click', function() {

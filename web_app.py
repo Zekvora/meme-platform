@@ -521,12 +521,19 @@ async def api_delete_meme(request: Request, meme_id: int):
 
 @app.post("/api/meme/{meme_id}/like")
 async def api_toggle_like(request: Request, meme_id: int):
-    """Toggle like."""
-    user = await require_auth(request)
-    liked = await db.toggle_like(user["id"], meme_id)
-    meme = await db.get_meme_by_id(meme_id)
+    """Toggle like - works for anonymous users too."""
+    user = await get_current_user(request)
     
-    return {"liked": liked, "likes_count": meme["likes_count"]}
+    if user:
+        # Registered user - use database
+        liked = await db.toggle_like(user["id"], meme_id)
+        meme = await db.get_meme_by_id(meme_id)
+        return {"liked": liked, "likes_count": meme["likes_count"]}
+    else:
+        # Anonymous - just increment counter (localStorage handles toggle)
+        await db.increment_meme_likes(meme_id)
+        meme = await db.get_meme_by_id(meme_id)
+        return {"liked": True, "likes_count": meme["likes_count"]}
 
 
 @app.post("/api/meme/{meme_id}/share")

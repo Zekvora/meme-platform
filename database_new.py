@@ -702,6 +702,16 @@ async def toggle_like(user_id: int, meme_id: int) -> bool:
             return True
 
 
+async def increment_meme_likes(meme_id: int) -> None:
+    """Increment likes for anonymous users."""
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            "UPDATE memes SET likes_count = likes_count + 1 WHERE id = ?",
+            (meme_id,)
+        )
+        await db.commit()
+
+
 async def has_liked(user_id: int, meme_id: int) -> bool:
     """Check if user liked meme."""
     async with aiosqlite.connect(DATABASE_PATH) as db:
