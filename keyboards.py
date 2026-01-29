@@ -30,8 +30,8 @@ def main_menu_kb(lang: str = "ru") -> InlineKeyboardMarkup:
     )
     builder.row(
         InlineKeyboardButton(
-            text="🌐 Открыть MemePlatform",
-            url=WEB_URL
+            text="� Открыть каталог",
+            web_app=WebAppInfo(url=f"{WEB_URL}/miniapp")
         )
     )
     builder.row(

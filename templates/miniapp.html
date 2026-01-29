@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MemePlatform</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg-color: #1a1a2e;
+            --tg-theme-text-color: #ffffff;
+            --tg-theme-hint-color: #8b8b8b;
+            --tg-theme-link-color: #6c5ce7;
+            --tg-theme-button-color: #6c5ce7;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #16213e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            min-height: 100vh;
+            padding: 12px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(108, 92, 231, 0.3);
+            margin-bottom: 16px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .tab {
+            padding: 10px 16px;
+            border-radius: 20px;
+            background: var(--tg-theme-secondary-bg-color);
+            border: none;
+            color: var(--tg-theme-text-color);
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: var(--tg-theme-button-color);
+        }
+        
+        .meme-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .meme-card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .meme-card:active {
+            transform: scale(0.95);
+        }
+        
+        .meme-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+        
+        .meme-card .info {
+            padding: 10px;
+        }
+        
+        .meme-card .title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .meme-card .stats {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--tg-theme-hint-color);
+        }
+        
+        .meme-card .stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal.show {
+            display: block;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .modal-img {
+            width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        
+        .btn-secondary {
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+        }
+        
+        .like-btn.liked {
+            color: #e74c3c;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: var(--tg-theme-hint-color);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--tg-theme-secondary-bg-color);
+            border-top-color: var(--tg-theme-button-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎭 MemePlatform</h1>
+    </div>
+    
+    <div class="tabs" id="tabs">
+        <button class="tab active" data-category="all">🔥 Все</button>
+    </div>
+    
+    <div class="meme-grid" id="memeGrid">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 12px; color: var(--tg-theme-hint-color);">Загрузка мемов...</p>
+        </div>
+    </div>
+    
+    <div class="modal" id="modal">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <img class="modal-img" id="modalImg" src="">
+        <h2 class="modal-title" id="modalTitle"></h2>
+        <div class="modal-actions">
+            <button class="btn btn-secondary like-btn" id="likeBtn" onclick="toggleLike()">
+                ❤️ <span id="likeCount">0</span>
+            </button>
+            <button class="btn btn-primary" onclick="createMeme()">
+                ✏️ Создать мем
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Apply Telegram theme
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#1a1a2e');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#8b8b8b');
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#6c5ce7');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#16213e');
+        
+        let memes = [];
+        let currentMeme = null;
+        let likedMemes = JSON.parse(localStorage.getItem('likedMemes') || '[]');
+        
+        // Templates data (loaded locally since this is a mini app)
+        const templates = [
+            {id: 1, title: "Дрейк", filename: "drake.jpg", likes: 156},
+            {id: 2, title: "Парень отвлёкся", filename: "distracted.jpg", likes: 243},
+            {id: 3, title: "Две кнопки", filename: "buttons.jpg", likes: 89},
+            {id: 4, title: "Расширение мозга", filename: "brain.jpg", likes: 312},
+            {id: 5, title: "Измени моё мнение", filename: "changemymind.jpg", likes: 178},
+            {id: 6, title: "Губка Боб", filename: "spongebob.jpg", likes: 95},
+            {id: 7, title: "Disaster Girl", filename: "disaster-girl.jpg", likes: 134},
+            {id: 8, title: "Doge", filename: "doge.jpg", likes: 267},
+            {id: 9, title: "Пират смотрит", filename: "pirate-looking.jpg", likes: 82},
+            {id: 10, title: "Грустный Пабло", filename: "sad-pablo.jpg", likes: 198},
+            {id: 11, title: "Success Kid", filename: "success-kid.jpg", likes: 145},
+            {id: 12, title: "Bad Luck Brian", filename: "bad-luck-brian.jpg", likes: 112},
+            {id: 13, title: "One Does Not Simply", filename: "one-does-not.jpg", likes: 223},
+            {id: 14, title: "Ancient Aliens", filename: "ancient-aliens.jpg", likes: 167},
+            {id: 15, title: "Woman Yelling at Cat", filename: "woman-cat.jpg", likes: 289},
+            {id: 16, title: "Surprised Pikachu", filename: "surprised-pikachu.jpg", likes: 356}
+        ];
+        
+        function loadMemes() {
+            memes = templates;
+            renderMemes(memes);
+        }
+        
+        function renderMemes(memeList) {
+            const grid = document.getElementById('memeGrid');
+            
+            if (memeList.length === 0) {
+                grid.innerHTML = '<div class="empty">😔 Мемов не найдено</div>';
+                return;
+            }
+            
+            grid.innerHTML = memeList.map(meme => `
+                <div class="meme-card" onclick="openMeme(${meme.id})">
+                    <img src="/data/templates/${meme.filename}" alt="${meme.title}" 
+                         onerror="this.src='https://via.placeholder.com/200x120/1a1a2e/6c5ce7?text=🎭'">
+                    <div class="info">
+                        <div class="title">${meme.title}</div>
+                        <div class="stats">
+                            <span>❤️ ${meme.likes + (likedMemes.includes(String(meme.id)) ? 1 : 0)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function openMeme(id) {
+            currentMeme = memes.find(m => m.id === id);
+            if (!currentMeme) return;
+            
+            document.getElementById('modalImg').src = `/data/templates/${currentMeme.filename}`;
+            document.getElementById('modalTitle').textContent = currentMeme.title;
+            
+            const liked = likedMemes.includes(String(id));
+            const likeBtn = document.getElementById('likeBtn');
+            likeBtn.classList.toggle('liked', liked);
+            document.getElementById('likeCount').textContent = currentMeme.likes + (liked ? 1 : 0);
+            
+            document.getElementById('modal').classList.add('show');
+            tg.BackButton.show();
+            tg.BackButton.onClick(closeModal);
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+            currentMeme = null;
+            tg.BackButton.hide();
+        }
+        
+        function toggleLike() {
+            if (!currentMeme) return;
+            
+            const id = String(currentMeme.id);
+            const likeBtn = document.getElementById('likeBtn');
+            const likeCount = document.getElementById('likeCount');
+            
+            if (likedMemes.includes(id)) {
+                likedMemes = likedMemes.filter(x => x !== id);
+                likeBtn.classList.remove('liked');
+                likeCount.textContent = currentMeme.likes;
+            } else {
+                likedMemes.push(id);
+                likeBtn.classList.add('liked');
+                likeCount.textContent = currentMeme.likes + 1;
+                tg.HapticFeedback.impactOccurred('light');
+            }
+            
+            localStorage.setItem('likedMemes', JSON.stringify(likedMemes));
+            renderMemes(memes);
+        }
+        
+        function createMeme() {
+            if (!currentMeme) return;
+            
+            // Send data to bot and close
+            tg.sendData(JSON.stringify({
+                action: 'create_meme',
+                template_id: currentMeme.id,
+                template_name: currentMeme.title
+            }));
+        }
+        
+        // Initialize
+        loadMemes();
+        
+        // Tab switching
+        document.getElementById('tabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab')) {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                // Filter would go here
+                renderMemes(memes);
+            }
+        });
+    </script>
+</body>
+</html>

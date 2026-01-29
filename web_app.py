@@ -106,6 +106,16 @@ async def startup():
 
 
 # ═══════════════════════════════════════════════
+# TELEGRAM MINI APP
+# ═══════════════════════════════════════════════
+
+@app.get("/miniapp", response_class=HTMLResponse)
+async def miniapp(request: Request):
+    """Telegram Mini App."""
+    return templates.TemplateResponse("miniapp.html", {"request": request})
+
+
+# ═══════════════════════════════════════════════
 # PUBLIC PAGES
 # ═══════════════════════════════════════════════
 
